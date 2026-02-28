@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلطان العسل - نظام الإدارة الملكي</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <div id="loginScreen" class="login-overlay">
+        <div class="login-box glass">
+            <img src="logo.png" class="login-logo" alt="شعار سلطان العسل">
+            <h2>تسجيل دخول الإدارة</h2>
+            <div class="login-fields">
+                <input type="text" id="username" placeholder="اسم المستخدم">
+                <input type="password" id="password" placeholder="كلمة المرور">
+                <button onclick="login()" class="btn-gold-action">دخول آمن</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="appBody" class="app-container" style="display: none;">
+        <header class="main-header glass">
+            <button onclick="logout()" class="btn-logout">خروج</button>
+            <div class="header-center">
+                <img src="logo.png" class="header-logo" alt="الشعار">
+                <h1 class="system-title">سلطان العسل</h1>
+            </div>
+            <div id="userWelcome"></div>
+        </header>
+
+        <section class="form-section glass">
+            <div class="smart-paste-container">
+                <textarea id="smartInput" placeholder="الصق بيانات طلب سلة هنا بالكامل..."></textarea>
+                <button onclick="processSmartPaste()" class="btn-extract">✨ استخراج ذكي وفوري</button>
+            </div>
+
+            <div class="input-grid">
+                <div class="inp-group"><label>اسم العميل</label><input type="text" id="custName"></div>
+                <div class="inp-group"><label>رقم الطلب</label><input type="text" id="orderID"></div>
+                <div class="inp-group"><label>رقم البوليصة</label><input type="text" id="trackingID"></div>
+                <div class="inp-group"><label>الإجمالي (SAR)</label><input type="number" id="orderPrice"></div>
+                <div class="inp-group"><label>مسؤول التجهيز</label><input type="text" id="prepEmp"></div>
+                <div class="inp-group">
+                    <label>الفرع</label>
+                    <select id="branchName">
+                        <option>فرع المحالة</option>
+                        <option>فرع الروضة</option>
+                        <option>فرع التعمير</option>
+                    </select>
+                </div>
+                <div class="inp-group">
+                    <label>الشحن/التوصيل</label>
+                    <select id="deliveryType">
+                        <option>📦 سمسا</option>
+                        <option>🛵 مندوب</option>
+                        <option>🏠 استلام فرع</option>
+                    </select>
+                </div>
+                <div class="inp-group">
+                    <label>نوع الطلب</label>
+                    <select id="orderType">
+                        <option value="سلة">🛒 سلة</option>
+                        <option value="واتساب">💬 واتساب</option>
+                    </select>
+                </div>
+            </div>
+            <button id="saveBtn" onclick="saveOrder()" class="btn-save">حفظ الطلب في القاعدة ✅</button>
+        </section>
+
+        <div class="tools-area glass">
+            <input type="text" id="searchInput" oninput="filterOrders()" placeholder="🔍 ابحث بالاسم، رقم الطلب، أو البوليصة...">
+            <div class="admin-btns">
+                <button onclick="toggleArchive()" id="archiveBtn" class="btn-gray">📂 الأرشيف</button>
+                <button onclick="printAllToday()" class="btn-gold">⎙ طباعة كشف اليوم</button>
+            </div>
+        </div>
+
+        <main class="lists-wrapper">
+            <div class="list-col">
+                <h2 class="list-title">🛒 طلبات سلة</h2>
+                <div id="sallaList"></div>
+            </div>
+            <div class="list-col">
+                <h2 class="list-title">💬 طلبات واتساب</h2>
+                <div id="whatsappList"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
