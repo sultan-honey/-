@@ -1,0 +1,97 @@
+:root {
+    --gold-gradient: linear-gradient(135deg, #d4af37 0%, #fcf6ba 45%, #d4af37 100%);
+    --dark-bg: #0a0a0a;
+    --card-bg: rgba(20, 20, 20, 0.9);
+    --text-color: #e0e0e0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-color);
+    margin: 0; direction: rtl;
+}
+
+/* تأثير الزجاج */
+.glass {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+/* تسجيل الدخول */
+.login-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 9999;
+}
+.login-box { padding: 40px; text-align: center; width: 350px; border: 2px solid #333; }
+.login-box:hover { border-color: #d4af37; transition: 0.5s; }
+.login-logo { width: 120px; margin-bottom: 20px; filter: drop-shadow(0 0 10px #d4af37); }
+.login-fields input { width: 100%; padding: 12px; margin: 10px 0; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; }
+
+/* الأزرار الذهبية الفخمة */
+.btn-gold-action, .btn-extract, .btn-gold {
+    background: var(--gold-gradient);
+    color: #000; border: none; padding: 12px 25px;
+    border-radius: 8px; font-weight: bold; cursor: pointer;
+    transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;
+}
+.btn-gold-action:hover, .btn-extract:hover { box-shadow: 0 0 15px rgba(212, 175, 55, 0.7); transform: translateY(-2px); }
+
+/* الهيدر */
+.main-header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; margin: 10px; border-bottom: 2px solid #d4af37; }
+.header-logo { width: 60px; filter: drop-shadow(0 0 5px #d4af37); }
+.system-title { background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+
+/* الفورم والكروت */
+.form-section { margin: 20px; padding: 25px; }
+.input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+.inp-group label { display: block; color: #d4af37; font-size: 12px; margin-bottom: 5px; font-weight: bold; }
+.inp-group input, .inp-group select { width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid #333; color: white; border-radius: 6px; }
+textarea#smartInput { width: 100%; height: 100px; background: rgba(0,0,0,0.5); border: 1px solid #d4af37; color: white; border-radius: 10px; padding: 10px; resize: none; }
+
+.order-card {
+    background: var(--card-bg);
+    border-right: 5px solid #d4af37;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    transition: 0.3s;
+    border: 1px solid #222;
+}
+.order-card:hover { border-color: #d4af37; transform: translateX(-5px); box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2); }
+
+/* أدوات الكرت (📝 تعديل و 🗑️ حذف) */
+.card-tools { position: absolute; left: 15px; top: 15px; display: flex; gap: 8px; }
+.card-tools button { background: none; border: 1px solid #444; color: #aaa; cursor: pointer; padding: 5px 8px; border-radius: 4px; transition: 0.3s; }
+.btn-edit:hover { border-color: #d4af37; color: #d4af37; }
+.btn-delete:hover { border-color: #c0392b; color: #c0392b; }
+
+.tools-area { margin: 20px; padding: 15px; display: flex; gap: 15px; justify-content: space-between; }
+#searchInput { flex: 1; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid #d4af37; border-radius: 8px; color: white; }
+
+.lists-wrapper { display: flex; gap: 20px; padding: 0 20px 20px; }
+.list-col { flex: 1; }
+.list-title { text-align: center; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; border-bottom: 1px solid #d4af37; padding-bottom: 10px; }
+
+/* ⎙ تنسيق الطباعة الفخم ⎙ */
+@media print {
+    body * { visibility: hidden; background: #fff !important; color: #000 !important; }
+    .print-container, .print-container * { visibility: visible; }
+    .print-container {
+        position: absolute; left: 0; top: 0; width: 100%;
+        padding: 40px; display: flex; flex-direction: column; align-items: center;
+        direction: rtl; font-family: 'Tahoma', sans-serif;
+    }
+    .print-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; width: 100%; }
+    .print-logo { width: 100px; margin-bottom: 10px; }
+    .print-body { width: 100%; border: 10px double #d4af37; padding: 30px; border-radius: 15px; box-sizing: border-box; }
+    .print-title { color: #d4af37 !important; font-size: 28px; margin-bottom: 20px; text-align: center; }
+    .print-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+    .print-label { font-weight: bold; color: #333; }
+    .print-value { color: #000; }
+    .print-footer { margin-top: 30px; text-align: center; font-size: 14px; color: #666; width: 100%; border-top: 1px solid #ccc; padding-top: 10px; }
+}
