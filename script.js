@@ -40,7 +40,6 @@ function showApp() {
     loadData(); 
 }
 
-// دالة الاستخراج (كما هي)
 function processSmartPaste() {
     const text = document.getElementById('smartInput').value;
     if (!text) return alert("الخانة فارغة!");
@@ -65,9 +64,11 @@ function loadData() {
         sList.innerHTML = ""; wList.innerHTML = "";
         snap.forEach(child => {
             const o = child.val();
-            // البحث الشامل (يظهر طلبات اليوم + الأرشيف إذا طابق البحث)
             if (userRole === "staff" && o.emp !== currentUser) return;
 
+            // شرط عدم إظهار البوليصة إذا كان مندوب
+            const trackingDisplay = o.delivery === "توصيل مندوب" ? "---" : (o.trackingID || '---');
+            
             const card = `
                 <div class="order-card" id="${child.key}" data-user="${o.emp}">
                     <div class="card-tools" style="position:absolute; left:10px; top:10px;">
@@ -80,18 +81,20 @@ function loadData() {
                     <div class="card-details">
                         <span>🏷️ الموظف: ${o.emp}</span> | 👨‍🍳 تجهيز: ${o.prepEmp}<br>
                         <span>🔢 طلب: ${o.id}</span> | 💰 ${o.price} ر.س<br>
-                        <span>📦 ${o.delivery}</span> | 📄 بوليصة: ${o.trackingID || '---'}
+                        <span>📦 ${o.delivery}</span> | 📄 بوليصة: ${trackingDisplay}
                     </div>
                 </div>`;
             o.type === "سلة" ? sList.insertAdjacentHTML('afterbegin', card) : wList.insertAdjacentHTML('afterbegin', card);
         });
-        filterOrders(); // تطبيق البحث تلقائياً
+        filterOrders();
     });
 }
 
 // دالة الطباعة الملونة الجديدة (المربع الذهبي)
 function formatOrderForPrint(o) {
     const userColor = o.emp === "عمر" ? "var(--color-omar)" : (o.emp === "مريم" ? "var(--color-maryam)" : "black");
+    const trackingDisplay = o.delivery === "توصيل مندوب" ? "---" : (o.trackingID || '---');
+    
     return `
         <div style="width: 350px; height: 350px; border: 4px solid var(--gold); padding: 20px; margin: 15px; border-radius: 20px; direction: rtl; float: right; box-sizing: border-box; overflow: hidden; position: relative;">
             <div style="text-align: center; border-bottom: 2px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
@@ -103,7 +106,7 @@ function formatOrderForPrint(o) {
                 🔢 الطلب: ${o.id}<br>
                 💰 المبلغ: ${o.price} ريال<br>
                 📦 التوصيل: ${o.delivery}<br>
-                📄 البوليصة: ${o.trackingID || '---'}<br>
+                📄 البوليصة: ${trackingDisplay}<br>
                 🏷️ الموظف: ${o.emp}
             </div>
             <div style="position:absolute; bottom:10px; right:20px; font-size:12px; color:#555;">
@@ -121,7 +124,6 @@ function printSingleOrder(key) {
     });
 }
 
-// طباعة كل طلبات اليوم (ملونة)
 function printAllToday() {
     db.ref('orders').once('value', snap => {
         let content = "";
