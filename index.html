@@ -3,74 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سلطان العسل - النظام الاحترافي</title>
+    <title>سلطان العسل - لوحة التحكم</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
     <div id="loginScreen" class="login-container">
-        <img src="1000031072.png" alt="الشعار" class="login-logo">
-        <h2>تسجيل الدخول</h2>
-        <input type="text" id="username" placeholder="اسم المستخدم">
-        <input type="password" id="password" placeholder="كلمة المرور">
+        <img src="1000031072.png" width="80">
+        <h2>نظام سلطان العسل</h2>
+        <input type="text" id="username" placeholder="اسم المستخدم"><br>
+        <input type="password" id="password" placeholder="كلمة المرور"><br>
         <button onclick="login()" class="btn-primary">دخول</button>
     </div>
 
     <div id="appBody" class="app-container" style="display: none;">
         <header class="main-header">
-            <h1 class="system-title">سلطان العسل</h1>
+            <h1 style="color:#b48608">سلطان العسل</h1>
             <p id="userWelcome"></p>
-            <button onclick="logout()" class="btn-logout">خروج</button>
+            <button onclick="logout()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">خروج</button>
         </header>
 
-        <section class="smart-section">
-            <div class="smart-paste-box">
-                <textarea id="smartInput" placeholder="الصق تفاصيل الطلب من سلة..."></textarea>
-                <button onclick="processSmartPaste()" class="btn-smart">استخراج البيانات</button>
-            </div>
-        </section>
+        <div class="stats-grid">
+            <div class="stat-card"><h3>إجمالي طلبات اليوم</h3><p id="statTotalOrders">0</p></div>
+            <div class="stat-card"><h3>إجمالي المبيعات</h3><p id="statTotalSales">0</p></div>
+            <div class="stat-card omar"><h3>مبيعات عمر</h3><p id="statOmar">0</p></div>
+            <div class="stat-card maryam"><h3>مبيعات مريم</h3><p id="statMaryam">0</p></div>
+        </div>
 
         <section class="form-section">
+            <div class="smart-paste-box">
+                <textarea id="smartInput" placeholder="الصق نص سلة هنا..."></textarea>
+                <button onclick="processSmartPaste()" class="btn-smart">✨ استخراج ذكي</button>
+            </div>
             <div class="input-grid">
                 <input type="text" id="custName" placeholder="اسم العميل">
                 <input type="text" id="prepEmp" placeholder="مسؤول التجهيز">
                 <input type="text" id="orderID" placeholder="رقم الطلب">
                 <input type="text" id="trackingID" placeholder="رقم البوليصة">
                 <input type="number" id="orderPrice" placeholder="السعر">
-                <select id="branchName">
-                    <option value="فرع المحالة">فرع المحالة</option>
-                    <option value="فرع الروضة">فرع الروضة</option>
-                </select>
                 <select id="deliveryType">
                     <option value="توصيل مندوب">🛵 توصيل مندوب</option>
                     <option value="شحن سمسا">📦 شحن سمسا</option>
                 </select>
-                <select id="orderType">
-                    <option value="سلة">🛒 طلب سلة</option>
-                    <option value="واتساب">💬 طلب واتساب</option>
-                </select>
+                <select id="branchName"><option value="المحالة">فرع المحالة</option></select>
+                <select id="orderType"><option value="سلة">🛒 سلة</option><option value="واتساب">💬 واتساب</option></select>
             </div>
             <button onclick="saveOrder()" id="saveBtn" class="btn-primary">حفظ الطلب ✅</button>
         </section>
 
         <div class="search-section">
-            <input type="text" id="searchInput" onkeyup="filterOrders()" placeholder="🔍 ابحث في النشط والأرشيف...">
+            <input type="text" id="searchInput" onkeyup="filterOrders()" placeholder="🔍 ابحث بالاسم أو الرقم (يبحث في الأرشيف أيضاً)...">
         </div>
 
-        <div class="admin-actions">
-            <button onclick="printAllToday()" class="btn-print-green">⎙ طباعة كل طلبات اليوم</button>
+        <div style="text-align:center; margin-bottom:20px; background:white; padding:15px; border-radius:15px;">
+            <span>طباعة يوم محدد: </span>
+            <input type="text" id="printDateSelector" placeholder="03-03-2026" style="width:120px; padding:5px;">
+            <button onclick="printAllToday()" class="btn-smart" style="width:auto; padding:5px 20px;">⎙ طباعة</button>
         </div>
 
         <main class="main-content">
-            <div class="list-column">
-                <h2 class="section-title">🛒 طلبات سلة</h2>
-                <div id="sallaList"></div>
-            </div>
-            <div class="list-column">
-                <h2 class="section-title">💬 طلبات واتساب</h2>
-                <div id="whatsappList"></div>
-            </div>
+            <div class="list-column"><h2>🛒 سلة</h2><div id="sallaList"></div></div>
+            <div class="list-column"><h2>💬 واتساب</h2><div id="whatsappList"></div></div>
         </main>
     </div>
     <script src="script.js"></script>
