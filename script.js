@@ -1,3 +1,4 @@
+// --- إعدادات قاعدة بيانات فايبربيس ---
 const firebaseConfig = {
     apiKey: "AIzaSyCcgQj8bk5Me1g80EHLY7heukjUvH_GSKs",
     authDomain: "sultan-honey.firebaseapp.com",
@@ -10,13 +11,19 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+// دالة لجلب تاريخ اليوم بصيغة (DD-MM-YYYY) لضمان تحديثه دائماً
+function getTodayDate() {
+    return new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+}
+
 let currentUser = localStorage.getItem('loggedUser');
 let userRole = localStorage.getItem('userRole');
 let editKey = null;
 
+// التحقق من حالة تسجيل الدخول عند فتح الصفحة
 if (currentUser) { showApp(); }
 
+// --- وظيفة تسجيل الدخول ---
 function login() {
     const users = { "عمر": "111", "مريم": "222", "إبراهيم": "6410" };
     const user = document.getElementById('username').value;
@@ -27,17 +34,20 @@ function login() {
         localStorage.setItem('loggedUser', user);
         localStorage.setItem('userRole', userRole);
         location.reload();
-    } else { alert("خطأ!"); }
+    } else { alert("عذراً، البيانات غير صحيحة ❌"); }
 }
 
+// --- إظهار لوحة التحكم ---
 function showApp() { 
     document.getElementById('loginPage').style.display = 'none'; 
     document.getElementById('appBody').style.display = 'block'; 
     document.getElementById('displayName').innerText = currentUser;
+    // ضبط التقويم الافتراضي على تاريخ اليوم عند الفتح
     document.getElementById('calendarFilter').value = new Date().toISOString().split('T')[0];
     loadData(); 
 }
 
+// --- جلب البيانات وعرضها مع مراعاة الخصوصية ---
 function loadData() {
     db.ref('orders').on('value', (snap) => {
         const sList = document.getElementById('sallaList');
@@ -45,14 +55,17 @@ function loadData() {
         sList.innerHTML = ""; wList.innerHTML = "";
         
         let stats = { totalO: 0, totalS: 0, omarO: 0, omarS: 0, maryamO: 0, maryamS: 0 };
-        const cal = document.getElementById('calendarFilter').value.split('-').reverse().join('-');
+        // تحويل تاريخ التقويم (YYYY-MM-DD) إلى صيغة البحث في الداتا (DD-MM-YYYY)
+        const selectedDate = document.getElementById('calendarFilter').value.split('-').reverse().join('-');
         const search = document.getElementById('searchInput').value.toLowerCase();
 
         snap.forEach(child => {
             const o = child.val();
+            
+            // شرط الخصوصية: الموظف يرى طلباته فقط، والآدمن يرى الكل
             if (userRole === "staff" && o.emp !== currentUser) return;
 
-            const isDate = o.dateKey === cal;
+            const isDate = o.dateKey === selectedDate;
             const isMatch = o.name.toLowerCase().includes(search) || o.id.includes(search);
 
             if (isDate) {
@@ -61,6 +74,7 @@ function loadData() {
                 if (o.emp === "مريم") { stats.maryamO++; stats.maryamS += parseFloat(o.price || 0); }
             }
 
+            // عرض الطلب إذا كان يطابق التاريخ المختار أو إذا كان هناك بحث نصي
             if (isDate || (search.length > 0 && isMatch)) {
                 const card = `
                 <div class="order-card" data-user="${o.emp}">
@@ -70,9 +84,10 @@ function loadData() {
                         <button onclick="printSingleOrder('${child.key}')">⎙</button>
                     </div>
                     <strong>👤 ${o.name}</strong><br>
-                    <span>🔢 ${o.id} | 💰 ${o.price} ر.س</span><br>
-                    <span>📦 ${o.delivery} | 🏷️ الموظف: ${o.emp}</span><br>
-                    ${o.delivery !== 'توصيل مندوب' ? `<span>📄 البوليصة: ${o.trackingID || '---'}</span>` : ''}
+                    <span>🔢 طلب: ${o.id} | 💰 ${o.price} ر.س</span><br>
+                    <span>🏢 ${o.branch} | 🏷️ الموظف: ${o.emp}</span><br>
+                    <span>👨‍🍳 المجهز: ${o.prepEmp || "---"}</span><br>
+                    <span>📦 ${o.delivery} ${o.delivery !== 'توصيل مندوب' && o.delivery !== 'استلام من الفرع' ? `| 📄 بوليصة: ${o.trackingID || '---'}` : ''}</span>
                 </div>`;
                 o.type === "سلة" ? sList.insertAdjacentHTML('afterbegin', card) : wList.insertAdjacentHTML('afterbegin', card);
             }
@@ -81,33 +96,58 @@ function loadData() {
     });
 }
 
-// دالة التنسيق الموحد للطباعة (المربع المذهب الملون)
+// --- تحديث أرقام المبيعات والطلبات حسب الصلاحية ---
+function updateStatsUI(s) {
+    const adminOnly = document.querySelectorAll('.admin-only');
+    const omarBox = document.querySelector('.stat-card.omar');
+    const maryamBox = document.querySelector('.stat-card.maryam');
+
+    if (userRole === 'admin') {
+        adminOnly.forEach(el => el.classList.remove('hidden'));
+        document.getElementById('statTotalOrders').innerText = s.totalO;
+        document.getElementById('statTotalSales').innerText = s.totalS.toFixed(2) + " ريال";
+        omarBox.classList.remove('hidden');
+        maryamBox.classList.remove('hidden');
+    } else {
+        adminOnly.forEach(el => el.classList.add('hidden'));
+        omarBox.classList.toggle('hidden', currentUser !== "عمر");
+        maryamBox.classList.toggle('hidden', currentUser !== "مريم");
+    }
+    document.getElementById('statOmar').innerText = `${s.omarO} طلب | ${s.omarS.toFixed(2)} ريال`;
+    document.getElementById('statMaryam').innerText = `${s.maryamO} طلب | ${s.maryamS.toFixed(2)} ريال`;
+}
+
+// --- تنسيق المربع المذهب للطباعة ---
 function getPrintDecor(o) {
     const color = o.emp === "عمر" ? "#007bff" : (o.emp === "مريم" ? "#e83e8c" : "#000");
+    const hideTracking = (o.delivery === "توصيل مندوب" || o.delivery === "استلام من الفرع");
     return `
-    <div style="width:350px; height:350px; border:10px double #b48608; padding:20px; border-radius:15px; direction:rtl; font-family:Tahoma; position:relative; box-sizing:border-box; margin:10px; float:right; background:white;">
+    <div style="width:350px; height:350px; border:10px double #b48608; padding:20px; border-radius:15px; direction:rtl; font-family:Tahoma; position:relative; box-sizing:border-box; margin:10px; background:white; float:right; page-break-inside:avoid;">
         <h2 style="text-align:center; color:#b48608; margin-bottom:10px;">سلطان العسل</h2>
-        <div style="font-size:17px; line-height:1.8; color:${color}; font-weight:bold;">
-            👤 العميل: ${o.name}<br>🔢 الطلب: ${o.id}<br>💰 المبلغ: ${o.price} ريال<br>📦 التوصيل: ${o.delivery}<br>
-            ${o.delivery !== "توصيل مندوب" ? `📄 البوليصة: ${o.trackingID || '---'}<br>` : ""}
+        <div style="font-size:17px; line-height:1.7; color:${color}; font-weight:bold;">
+            👤 العميل: ${o.name}<br>🔢 الطلب: ${o.id}<br>💰 المبلغ: ${o.price} ريال<br>
+            📦 التوصيل: ${o.delivery}<br>📍 الفرع: ${o.branch}<br>
+            👨‍🍳 المجهز: ${o.prepEmp || "---"}<br>
+            ${!hideTracking ? `📄 البوليصة: ${o.trackingID || '---'}<br>` : ""}
             🏷️ الموظف: ${o.emp}
         </div>
         <div style="position:absolute; bottom:15px; left:15px; font-size:11px; color:#666;">📅 ${o.dateKey}</div>
     </div>`;
 }
 
+// --- وظائف الطباعة ---
 function printAllToday() {
-    const cal = document.getElementById('calendarFilter').value.split('-').reverse().join('-');
+    const selectedDate = document.getElementById('calendarFilter').value.split('-').reverse().join('-');
     db.ref('orders').once('value', snap => {
         let content = "";
         snap.forEach(c => {
             const o = c.val();
             if (userRole === "staff" && o.emp !== currentUser) return;
-            if (o.dateKey === cal) content += getPrintDecor(o);
+            if (o.dateKey === selectedDate) content += getPrintDecor(o);
         });
-        if (!content) return alert("لا توجد طلبات لهذا اليوم");
+        if (!content) return alert("لا توجد طلبات لهذا التاريخ");
         const win = window.open('', '', 'width=900,height=800');
-        win.document.write(`<html><body style="display:flex; flex-wrap:wrap; justify-content:center; background:#fff;">${content}</body></html>`);
+        win.document.write(`<html><body style="display:flex; flex-wrap:wrap; justify-content:center; padding:20px;">${content}</body></html>`);
         win.document.close(); win.print();
     });
 }
@@ -115,16 +155,20 @@ function printAllToday() {
 function printSingleOrder(key) {
     db.ref('orders/' + key).once('value', s => {
         const win = window.open('', '', 'width=500,height=500');
-        win.document.write(`<html><body style="display:flex; justify-content:center; align-items:center;">${getPrintDecor(s.val())}</body></html>`);
+        win.document.write(`<html><body style="display:flex; justify-content:center; align-items:center; padding:20px;">${getPrintDecor(s.val())}</body></html>`);
         win.document.close(); win.print();
     });
 }
 
+// --- الحذف بكلمة سر ---
 function smartDelete(key) { 
-    if (prompt("كلمة سر الحذف:") === "6410") { db.ref('orders/' + key).remove(); }
-    else { alert("خطأ!"); }
+    if (prompt("أدخل كلمة سر الحذف الموحدة:") === "6410") { 
+        db.ref('orders/' + key).remove(); 
+        alert("تم الحذف بنجاح ✅");
+    } else { alert("❌ عذراً، كلمة السر غير صحيحة"); }
 }
 
+// --- الاستخراج الذكي من نصوص سلة ---
 function processSmartPaste() {
     const text = document.getElementById('smartInput').value;
     if (!text) return;
@@ -135,34 +179,57 @@ function processSmartPaste() {
     document.getElementById('orderType').value = "سلة";
 }
 
+// --- حفظ أو تحديث الطلب ---
 function saveOrder() {
     const data = {
-        name: document.getElementById('custName').value, emp: currentUser,
+        name: document.getElementById('custName').value,
+        emp: currentUser,
         id: document.getElementById('orderID').value || "---",
         trackingID: document.getElementById('trackingID').value || "",
         price: document.getElementById('orderPrice').value || "0",
+        prepEmp: document.getElementById('prepEmp').value || "---",
+        branch: document.getElementById('branchName').value,
         delivery: document.getElementById('deliveryType').value,
         type: document.getElementById('orderType').value,
-        dateKey: today
+        // تم التغيير هنا ليأخذ تاريخ اللحظة الحالية عند كل عملية حفظ جديدة
+        dateKey: getTodayDate(), 
+        time: new Date().toLocaleTimeString('ar-SA')
     };
-    if (editKey) { db.ref('orders/' + editKey).update(data).then(() => { editKey = null; location.reload(); }); }
-    else { db.ref('orders').push(data).then(() => location.reload()); }
+    
+    if (!data.name) return alert("يرجى إدخال اسم العميل على الأقل");
+
+    if (editKey) {
+        // عند التعديل، نحافظ على التاريخ الأصلي للطلب ولا نغيره لتاريخ اليوم
+        db.ref('orders/' + editKey).once('value', snapshot => {
+            const originalData = snapshot.val();
+            data.dateKey = originalData.dateKey; 
+            db.ref('orders/' + editKey).update(data).then(() => { 
+                editKey = null; 
+                document.getElementById('saveBtn').innerText = "حفظ الطلب ✅";
+                location.reload(); 
+            });
+        });
+    } else {
+        db.ref('orders').push(data).then(() => location.reload());
+    }
 }
 
-function updateStatsUI(s) {
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = (userRole === 'admin' ? 'block' : 'none'));
-    document.getElementById('statTotalOrders').innerText = s.totalO;
-    document.getElementById('statTotalSales').innerText = s.totalS.toFixed(2);
-    document.getElementById('statOmar').innerText = `${s.omarO} طلب | ${s.omarS.toFixed(2)} ريال`;
-    document.getElementById('statMaryam').innerText = `${s.maryamO} طلب | ${s.maryamS.toFixed(2)} ريال`;
-}
-
-function logout() { localStorage.clear(); location.reload(); }
+// --- ملء البيانات عند الضغط على تعديل ---
 function editOrder(key) {
     db.ref('orders/' + key).once('value', s => {
         const o = s.val(); editKey = key;
-        document.getElementById('custName').value = o.name; document.getElementById('orderID').value = o.id;
-        document.getElementById('orderPrice').value = o.price; document.getElementById('trackingID').value = o.trackingID;
-        document.getElementById('saveBtn').innerText = "تحديث الطلب 🔄"; window.scrollTo(0,0);
+        document.getElementById('custName').value = o.name;
+        document.getElementById('orderID').value = o.id;
+        document.getElementById('orderPrice').value = o.price;
+        document.getElementById('trackingID').value = o.trackingID;
+        document.getElementById('prepEmp').value = o.prepEmp || ""; 
+        document.getElementById('branchName').value = o.branch || "فرع المحالة";
+        document.getElementById('deliveryType').value = o.delivery;
+        document.getElementById('orderType').value = o.type;
+        document.getElementById('saveBtn').innerText = "تحديث البيانات الحالية 🔄";
+        window.scrollTo(0,0);
     });
 }
+
+function logout() { localStorage.clear(); location.reload(); }
+                            
