@@ -27,7 +27,7 @@ function login() {
         localStorage.setItem('loggedUser', user);
         localStorage.setItem('userRole', userRole);
         location.reload();
-    } else { alert("بيانات خاطئة!"); }
+    } else { alert("خطأ!"); }
 }
 
 function showApp() { 
@@ -38,35 +38,22 @@ function showApp() {
     loadData(); 
 }
 
-function processSmartPaste() {
-    const text = document.getElementById('smartInput').value;
-    if (!text) return;
-    const nMatch = text.match(/العميل\s*\n\s*(.+)/);
-    if (nMatch) document.getElementById('custName').value = nMatch[1].trim();
-    const idMatch = text.match(/طلب\s*#(\d+)/);
-    if (idMatch) document.getElementById('orderID').value = idMatch[1];
-    const pMatch = text.match(/إجمالي الطلب\s*[\n\r]*.*?\s*(\d+(?:\.\d+)?)\s*SAR/);
-    if (pMatch) document.getElementById('orderPrice').value = pMatch[1];
-    const tMatch = text.match(/(?:شحنة برقم|بوليصة)\s*(\d{10,15})/);
-    if (tMatch) document.getElementById('trackingID').value = tMatch[1];
-    document.getElementById('orderType').value = "سلة";
-}
-
 function loadData() {
     db.ref('orders').on('value', (snap) => {
         const sList = document.getElementById('sallaList');
         const wList = document.getElementById('whatsappList');
         sList.innerHTML = ""; wList.innerHTML = "";
+        
         let stats = { totalO: 0, totalS: 0, omarO: 0, omarS: 0, maryamO: 0, maryamS: 0 };
-        const term = document.getElementById('searchInput').value.toLowerCase();
         const cal = document.getElementById('calendarFilter').value.split('-').reverse().join('-');
+        const search = document.getElementById('searchInput').value.toLowerCase();
 
         snap.forEach(child => {
             const o = child.val();
             if (userRole === "staff" && o.emp !== currentUser) return;
 
-            const isMatch = o.name.toLowerCase().includes(term) || o.id.includes(term);
             const isDate = o.dateKey === cal;
+            const isMatch = o.name.toLowerCase().includes(search) || o.id.includes(search);
 
             if (isDate) {
                 stats.totalO++; stats.totalS += parseFloat(o.price || 0);
@@ -74,17 +61,18 @@ function loadData() {
                 if (o.emp === "مريم") { stats.maryamO++; stats.maryamS += parseFloat(o.price || 0); }
             }
 
-            if (isDate || (term.length > 0 && isMatch)) {
+            if (isDate || (search.length > 0 && isMatch)) {
                 const card = `
                 <div class="order-card" data-user="${o.emp}">
-                    <div style="position:absolute; left:10px; top:10px;">
+                    <div class="card-tools">
                         <button onclick="smartDelete('${child.key}')">🗑️</button>
                         <button onclick="editOrder('${child.key}')">📝</button>
                         <button onclick="printSingleOrder('${child.key}')">⎙</button>
                     </div>
                     <strong>👤 ${o.name}</strong><br>
-                    <small>🔢 ${o.id} | 💰 ${o.price} ر.س | 🏷️ ${o.emp}</small><br>
-                    <small>📦 ${o.delivery} ${o.delivery !== 'توصيل مندوب' ? `| 📄 ${o.trackingID || '---'}` : ''}</small>
+                    <span>🔢 ${o.id} | 💰 ${o.price} ر.س</span><br>
+                    <span>📦 ${o.delivery} | 🏷️ الموظف: ${o.emp}</span><br>
+                    ${o.delivery !== 'توصيل مندوب' ? `<span>📄 البوليصة: ${o.trackingID || '---'}</span>` : ''}
                 </div>`;
                 o.type === "سلة" ? sList.insertAdjacentHTML('afterbegin', card) : wList.insertAdjacentHTML('afterbegin', card);
             }
@@ -93,63 +81,88 @@ function loadData() {
     });
 }
 
-function updateStatsUI(s) {
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = (userRole === 'admin' ? 'block' : 'none'));
-    document.getElementById('statOmar').parentElement.style.display = (userRole === 'admin' || currentUser === 'عمر') ? 'block' : 'none';
-    document.getElementById('statMaryam').parentElement.style.display = (userRole === 'admin' || currentUser === 'مريم') ? 'block' : 'none';
-    
-    document.getElementById('statTotalOrders').innerText = s.totalO;
-    document.getElementById('statTotalSales').innerText = s.totalS.toFixed(2);
-    document.getElementById('statOmar').innerText = `${s.omarO} طلب | ${s.omarS.toFixed(2)} ر.س`;
-    document.getElementById('statMaryam').innerText = `${s.maryamO} طلب | ${s.maryamS.toFixed(2)} ر.س`;
-}
-
+// دالة التنسيق الموحد للطباعة (المربع المذهب الملون)
 function getPrintDecor(o) {
     const color = o.emp === "عمر" ? "#007bff" : (o.emp === "مريم" ? "#e83e8c" : "#000");
     return `
-    <div style="width:350px; height:350px; border:10px double #b48608; padding:20px; border-radius:15px; direction:rtl; font-family:Tahoma; position:relative; box-sizing:border-box; margin:10px;">
-        <h2 style="text-align:center; color:#b48608;">سلطان العسل</h2>
+    <div style="width:350px; height:350px; border:10px double #b48608; padding:20px; border-radius:15px; direction:rtl; font-family:Tahoma; position:relative; box-sizing:border-box; margin:10px; float:right; background:white;">
+        <h2 style="text-align:center; color:#b48608; margin-bottom:10px;">سلطان العسل</h2>
         <div style="font-size:17px; line-height:1.8; color:${color}; font-weight:bold;">
             👤 العميل: ${o.name}<br>🔢 الطلب: ${o.id}<br>💰 المبلغ: ${o.price} ريال<br>📦 التوصيل: ${o.delivery}<br>
             ${o.delivery !== "توصيل مندوب" ? `📄 البوليصة: ${o.trackingID || '---'}<br>` : ""}
             🏷️ الموظف: ${o.emp}
         </div>
-        <div style="position:absolute; bottom:15px; left:15px; font-size:12px;">📅 ${o.dateKey}</div>
+        <div style="position:absolute; bottom:15px; left:15px; font-size:11px; color:#666;">📅 ${o.dateKey}</div>
     </div>`;
+}
+
+function printAllToday() {
+    const cal = document.getElementById('calendarFilter').value.split('-').reverse().join('-');
+    db.ref('orders').once('value', snap => {
+        let content = "";
+        snap.forEach(c => {
+            const o = c.val();
+            if (userRole === "staff" && o.emp !== currentUser) return;
+            if (o.dateKey === cal) content += getPrintDecor(o);
+        });
+        if (!content) return alert("لا توجد طلبات لهذا اليوم");
+        const win = window.open('', '', 'width=900,height=800');
+        win.document.write(`<html><body style="display:flex; flex-wrap:wrap; justify-content:center; background:#fff;">${content}</body></html>`);
+        win.document.close(); win.print();
+    });
 }
 
 function printSingleOrder(key) {
     db.ref('orders/' + key).once('value', s => {
         const win = window.open('', '', 'width=500,height=500');
-        win.document.write(`<html><body style="display:flex; justify-content:center; padding:20px;">${getPrintDecor(s.val())}</body></html>`);
+        win.document.write(`<html><body style="display:flex; justify-content:center; align-items:center;">${getPrintDecor(s.val())}</body></html>`);
         win.document.close(); win.print();
     });
+}
+
+function smartDelete(key) { 
+    if (prompt("كلمة سر الحذف:") === "6410") { db.ref('orders/' + key).remove(); }
+    else { alert("خطأ!"); }
+}
+
+function processSmartPaste() {
+    const text = document.getElementById('smartInput').value;
+    if (!text) return;
+    const n = text.match(/العميل\s*\n\s*(.+)/); if (n) document.getElementById('custName').value = n[1].trim();
+    const id = text.match(/طلب\s*#(\d+)/); if (id) document.getElementById('orderID').value = id[1];
+    const p = text.match(/إجمالي الطلب\s*[\n\r]*.*?\s*(\d+(?:\.\d+)?)\s*SAR/); if (p) document.getElementById('orderPrice').value = p[1];
+    const t = text.match(/(?:شحنة برقم|بوليصة)\s*(\d{10,15})/); if (t) document.getElementById('trackingID').value = t[1];
+    document.getElementById('orderType').value = "سلة";
 }
 
 function saveOrder() {
     const data = {
         name: document.getElementById('custName').value, emp: currentUser,
-        prepEmp: document.getElementById('prepEmp').value || "---", id: document.getElementById('orderID').value || "---",
-        trackingID: document.getElementById('trackingID').value || "", price: document.getElementById('orderPrice').value || "0",
-        delivery: document.getElementById('deliveryType').value, type: document.getElementById('orderType').value,
-        dateKey: today, time: new Date().toLocaleTimeString('ar-SA')
+        id: document.getElementById('orderID').value || "---",
+        trackingID: document.getElementById('trackingID').value || "",
+        price: document.getElementById('orderPrice').value || "0",
+        delivery: document.getElementById('deliveryType').value,
+        type: document.getElementById('orderType').value,
+        dateKey: today
     };
-    if (editKey) { db.ref('orders/' + editKey).update(data).then(() => location.reload()); }
+    if (editKey) { db.ref('orders/' + editKey).update(data).then(() => { editKey = null; location.reload(); }); }
     else { db.ref('orders').push(data).then(() => location.reload()); }
 }
 
-function smartDelete(key) { 
-    if (prompt("كلمة سر الحذف:") === "6410") { db.ref('orders/' + key).remove(); alert("تم الحذف"); }
-    else { alert("خطأ!"); }
+function updateStatsUI(s) {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = (userRole === 'admin' ? 'block' : 'none'));
+    document.getElementById('statTotalOrders').innerText = s.totalO;
+    document.getElementById('statTotalSales').innerText = s.totalS.toFixed(2);
+    document.getElementById('statOmar').innerText = `${s.omarO} طلب | ${s.omarS.toFixed(2)} ريال`;
+    document.getElementById('statMaryam').innerText = `${s.maryamO} طلب | ${s.maryamS.toFixed(2)} ريال`;
 }
 
+function logout() { localStorage.clear(); location.reload(); }
 function editOrder(key) {
     db.ref('orders/' + key).once('value', s => {
         const o = s.val(); editKey = key;
         document.getElementById('custName').value = o.name; document.getElementById('orderID').value = o.id;
         document.getElementById('orderPrice').value = o.price; document.getElementById('trackingID').value = o.trackingID;
-        document.getElementById('saveBtn').innerText = "تحديث الطلب 🔄";
-        window.scrollTo(0,0);
+        document.getElementById('saveBtn').innerText = "تحديث الطلب 🔄"; window.scrollTo(0,0);
     });
 }
-function logout() { localStorage.clear(); location.reload(); }
