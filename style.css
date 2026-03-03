@@ -1,50 +1,43 @@
 :root {
     --gold: #b48608;
-    --omar-blue: #007bff;
-    --maryam-pink: #e83e8c;
-    --bg: #f0f2f5;
+    --omar-bg: #e7f1ff;
+    --omar-border: #007bff;
+    --maryam-bg: #fff0f6;
+    --maryam-border: #e83e8c;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-body { background: var(--bg); direction: rtl; min-height: 100vh; }
+body { background: #f4f7f6; direction: rtl; }
 
-/* شاشة تسجيل الدخول */
-.login-page {
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-.login-card {
-    background: white; padding: 40px; border-radius: 25px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center;
-}
-.login-card img { width: 100px; margin-bottom: 20px; }
-.login-card input {
-    width: 100%; padding: 15px; margin-bottom: 15px;
-    border: 1px solid #ddd; border-radius: 12px; outline: none;
-}
+/* شاشة الدخول الموسطة */
+.login-page { display: flex; justify-content: center; align-items: center; height: 100vh; background: #eee; }
+.login-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 350px; }
+.login-card img { width: 80px; margin-bottom: 15px; }
+.login-card input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
 
-/* لوحة التحكم */
-.app-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-.main-header {
-    background: white; padding: 15px 25px; border-radius: 20px;
-    display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
-}
-.user-badge { background: var(--gold); color: white; padding: 5px 15px; border-radius: 50px; font-weight: bold; }
+/* الهيدر */
+.main-header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.user-badge { background: var(--gold); color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; }
 
-/* الإحصائيات */
-.stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-.stat-card { background: white; padding: 20px; border-radius: 15px; text-align: center; border-bottom: 5px solid var(--gold); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-.stat-card.omar { border-bottom-color: var(--omar-blue); color: var(--omar-blue); }
-.stat-card.maryam { border-bottom-color: var(--maryam-pink); color: var(--maryam-pink); }
-.stat-card p { font-size: 22px; font-weight: bold; margin-top: 10px; }
+/* الإحصائيات الملونة */
+.stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; padding: 20px; }
+.stat-card { background: white; padding: 20px; border-radius: 15px; text-align: center; border-bottom: 5px solid var(--gold); }
+.stat-card.omar { border-bottom-color: var(--omar-border); color: var(--omar-border); }
+.stat-card.maryam { border-bottom-color: var(--maryam-border); color: var(--maryam-border); }
 
-/* الطلبات */
-.order-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; position: relative; border-right: 10px solid var(--gold); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-.order-card[data-user="عمر"] { border-right-color: var(--omar-blue); }
-.order-card[data-user="مريم"] { border-right-color: var(--maryam-pink); }
+/* مستطيلات الطلبات الملونة */
+.order-card { padding: 15px; border-radius: 12px; margin-bottom: 15px; position: relative; border: 2px solid #ddd; }
+.order-card[data-user="عمر"] { background-color: var(--omar-bg); border-color: var(--omar-border); }
+.order-card[data-user="مريم"] { background-color: var(--maryam-bg); border-color: var(--maryam-border); }
 
-.form-section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-.input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
-input, select, textarea { padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
-.btn-primary { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+/* أزرار العمليات */
+.card-tools { position: absolute; left: 10px; top: 10px; display: flex; gap: 5px; }
+.card-tools button { border: none; background: white; border-radius: 5px; cursor: pointer; padding: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+/* الطباعة والبحث */
+.filter-bar { background: white; margin: 0 20px; padding: 15px; border-radius: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.btn-print-all { background: var(--gold); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+.form-section { background: white; margin: 20px; padding: 20px; border-radius: 15px; }
+.input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+textarea#smartInput { width: 100%; height: 70px; border: 2px dashed var(--gold); border-radius: 10px; padding: 10px; margin-bottom: 15px; }
