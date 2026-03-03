@@ -10,10 +10,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// التواريخ الافتراضية
 const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-let selectedDate = today;
-
 let currentUser = localStorage.getItem('loggedUser');
 let userRole = localStorage.getItem('userRole');
 let editKey = null;
@@ -37,10 +34,12 @@ function showApp() {
     document.getElementById('loginScreen').style.display = 'none'; 
     document.getElementById('appBody').style.display = 'block'; 
     document.getElementById('userWelcome').innerText = `مرحباً ${currentUser}`;
-    // تعيين قيمة التقويم لليوم
+    
+    // ضبط تاريخ التقويم لليوم الحالي افتراضياً
     const dateInput = document.getElementById('calendarFilter');
     const now = new Date();
     dateInput.value = now.toISOString().split('T')[0];
+    
     loadData(); 
 }
 
@@ -67,16 +66,19 @@ function loadData() {
         
         let stats = { totalO: 0, totalS: 0, omarO: 0, omarS: 0, maryamO: 0, maryamS: 0 };
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        // تحويل تاريخ التقويم لصيغة DD-MM-YYYY
         const calVal = document.getElementById('calendarFilter').value;
         const formattedCal = calVal.split('-').reverse().join('-');
 
         snap.forEach(child => {
             const o = child.val();
+            
+            // --- ميزة الخصوصية: الموظف يرى طلباته فقط ---
+            if (userRole === "staff" && o.emp !== currentUser) return;
+
             const matchesSearch = o.name.toLowerCase().includes(searchTerm) || o.id.includes(searchTerm);
             const matchesDate = o.dateKey === formattedCal;
 
-            // حساب الإحصائيات لليوم المختار في التقويم
+            // حساب الإحصائيات (ستحسب تلقائياً لمن يراه المستخدم فقط)
             if (matchesDate) {
                 stats.totalO++;
                 stats.totalS += parseFloat(o.price || 0);
@@ -84,7 +86,6 @@ function loadData() {
                 if (o.emp === "مريم") { stats.maryamO++; stats.maryamS += parseFloat(o.price || 0); }
             }
 
-            // العرض: يظهر إذا طابق التاريخ أو إذا كان هناك بحث نصي (للبحث في الأرشيف)
             if (matchesDate || (searchTerm.length > 0 && matchesSearch)) {
                 const card = `
                 <div class="order-card" data-user="${o.emp}">
@@ -109,16 +110,38 @@ function loadData() {
 }
 
 function updateStatsUI(s) {
-    document.getElementById('statTotalOrders').innerText = s.totalO;
-    document.getElementById('statTotalSales').innerText = s.totalS.toFixed(2) + " ر.س";
-    document.getElementById('statOmar').innerText = `${s.omarO} طلب | ${s.omarS.toFixed(2)} ر.س`;
-    document.getElementById('statMaryam').innerText = `${s.maryamO} طلب | ${s.maryamS.toFixed(2)} ر.س`;
+    const totalBox = document.getElementById('statTotalOrders').parentElement;
+    const salesBox = document.getElementById('statTotalSales').parentElement;
+    const omarBox = document.getElementById('statOmar').parentElement;
+    const maryamBox = document.getElementById('statMaryam').parentElement;
+
+    if (userRole === "staff") {
+        // إذا كان موظف، نخفي الإجماليات العامة ومبيعات الزملاء
+        totalBox.style.display = "none";
+        salesBox.style.display = "none";
+        omarBox.style.display = (currentUser === "عمر") ? "block" : "none";
+        maryamBox.style.display = (currentUser === "مريم") ? "block" : "none";
+        
+        document.getElementById('statOmar').innerText = `${s.omarO} طلب | ${s.omarS.toFixed(2)} ر.س`;
+        document.getElementById('statMaryam').innerText = `${s.maryamO} طلب | ${s.maryamS.toFixed(2)} ر.س`;
+    } else {
+        // للمسؤول إبراهيم تظهر كل الخانات
+        totalBox.style.display = "block";
+        salesBox.style.display = "block";
+        omarBox.style.display = "block";
+        maryamBox.style.display = "block";
+        
+        document.getElementById('statTotalOrders').innerText = s.totalO;
+        document.getElementById('statTotalSales').innerText = s.totalS.toFixed(2) + " ر.س";
+        document.getElementById('statOmar').innerText = `${s.omarO} طلب | ${s.omarS.toFixed(2)} ر.س`;
+        document.getElementById('statMaryam').innerText = `${s.maryamO} طلب | ${s.maryamS.toFixed(2)} ر.س`;
+    }
 }
 
 // ديكور الطباعة المربع المذهب الملون
 function getPrintDecor(o) {
     const color = o.emp === "عمر" ? "#007bff" : (o.emp === "مريم" ? "#e83e8c" : "#000");
-    const trackLine = o.delivery !== "توصيل مندوب" ? `<b>البوليصة:</b> ${o.trackingID || '---'}<br>` : "";
+    const trackLine = (o.delivery !== "توصيل مندوب") ? `<b>البوليصة:</b> ${o.trackingID || '---'}<br>` : "";
     
     return `
     <div style="width:350px; height:350px; border:10px double #b48608; padding:20px; border-radius:15px; direction:rtl; font-family:Tahoma; position:relative; box-sizing:border-box; margin:10px; float:right;">
@@ -132,7 +155,7 @@ function getPrintDecor(o) {
             🏷️ الموظف: ${o.emp}
         </div>
         <div style="position:absolute; bottom:15px; left:15px; font-size:12px; color:#666;">
-            📅 ${o.dateKey} | 👨‍🍳 ${o.prepEmp}
+            📅 ${o.dateKey} | 🕒 ${o.time || ''}
         </div>
     </div>`;
 }
@@ -140,7 +163,7 @@ function getPrintDecor(o) {
 function printSingleOrder(key) {
     db.ref('orders/' + key).once('value', s => {
         const win = window.open('', '', 'width=800,height=600');
-        win.document.write(`<html><body>${getPrintDecor(s.val())}</body></html>`);
+        win.document.write(`<html><body style="display:flex; justify-content:center;">${getPrintDecor(s.val())}</body></html>`);
         win.document.close(); win.print();
     });
 }
@@ -150,8 +173,13 @@ function printAllVisible() {
     const formattedCal = calVal.split('-').reverse().join('-');
     db.ref('orders').once('value', snap => {
         let content = "";
-        snap.forEach(c => { if(c.val().dateKey === formattedCal) content += getPrintDecor(c.val()); });
-        if(!content) return alert("لا توجد طلبات لهذا اليوم");
+        snap.forEach(c => { 
+            const o = c.val();
+            // طباعة ما يراه المستخدم فقط بناءً على خصوصيته وتاريخ اليوم المختار
+            if (userRole === "staff" && o.emp !== currentUser) return;
+            if (o.dateKey === formattedCal) content += getPrintDecor(o); 
+        });
+        if(!content) return alert("لا توجد طلبات قابلة للطباعة لهذا اليوم");
         const win = window.open('', '', 'width=900,height=800');
         win.document.write(`<html><body style="display:flex; flex-wrap:wrap;">${content}</body></html>`);
         win.document.close(); win.print();
@@ -170,12 +198,23 @@ function saveOrder() {
         delivery: document.getElementById('deliveryType').value,
         type: document.getElementById('orderType').value,
         dateKey: today,
-        time: new Date().toLocaleTimeString('ar-SA')
+        time: new Date().toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'})
     };
     if (editKey) {
-        db.ref('orders/' + editKey).update(data).then(() => { alert("تم التحديث"); location.reload(); });
+        db.ref('orders/' + editKey).update(data).then(() => { alert("تم التحديث ✅"); location.reload(); });
     } else {
-        db.ref('orders').push(data).then(() => { alert("تم الحفظ"); location.reload(); });
+        db.ref('orders').push(data).then(() => { alert("تم الحفظ ✅"); location.reload(); });
+    }
+}
+
+// ميزة كلمة السر للحذف
+function smartDelete(key) { 
+    const pass = prompt("يرجى إدخال كلمة سر الحذف لإتمام العملية:");
+    if (pass === "6410") {
+        db.ref('orders/' + key).remove(); 
+        alert("تم حذف الطلب بنجاح ✅");
+    } else {
+        alert("❌ كلمة السر خاطئة! لا يمكن الحذف.");
     }
 }
 
@@ -190,5 +229,5 @@ function editOrder(key) {
         window.scrollTo(0,0);
     });
 }
-function smartDelete(key) { if(confirm("حذف الطلب؟")) db.ref('orders/' + key).remove(); }
+
 function logout() { localStorage.clear(); location.reload(); }
